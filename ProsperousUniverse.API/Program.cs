@@ -118,7 +118,6 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-app.UseHttpsRedirection();
 app.MapGraphQL();
 
 app.Run();
