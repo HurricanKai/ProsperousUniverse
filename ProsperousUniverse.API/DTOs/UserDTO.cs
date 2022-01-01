@@ -5,7 +5,7 @@ using ProsperousUniverse.API.DataLoaders;
 namespace ProsperousUniverse.API.DTOs;
 
 [Node, GraphQLName("User")]
-[Authorize(Policy = "read:pu_users")]
+[Authorize(Policy = "read:pu_user")]
 public sealed class UserDTO : INode
 {
     [GraphQLType(typeof(IdType)), GraphQLNonNullType]
