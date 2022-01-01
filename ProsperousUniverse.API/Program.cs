@@ -136,6 +136,6 @@ app.MapGet("/", (async context =>
         await context.Response.WriteAsync(token);
     }
 }));
-app.MapGraphQL("/");
+app.MapGraphQL();
 
 app.Run();
