@@ -120,22 +120,22 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-// app.MapGet("/", (async context =>
-// {
-//     context.Response.StatusCode = 200;
-//     await context.Response.WriteAsync("Check /graphql for the API or /health for health information.\n");
-//     var authenticateInfo = await context.AuthenticateAsync();
-//     if (authenticateInfo.Principal?.Identity is not null)
-//     {
-//         await context.Response.WriteAsync(
-//             $"User logged in as {authenticateInfo.Principal.Identity.Name} via {authenticateInfo.Principal.Identity.AuthenticationType}.\n");
-//     }
-//     var token = authenticateInfo.Ticket?.Properties.Items[".Token.access_token"];
-//     if (token is not null)
-//     {
-//         await context.Response.WriteAsync(token);
-//     }
-// }));
+app.MapGet("/", (async context =>
+{
+    context.Response.StatusCode = 200;
+    await context.Response.WriteAsync("Check /graphql for the API or /health for health information.\n");
+    var authenticateInfo = await context.AuthenticateAsync();
+    if (authenticateInfo.Principal?.Identity is not null)
+    {
+        await context.Response.WriteAsync(
+            $"User logged in as {authenticateInfo.Principal.Identity.Name} via {authenticateInfo.Principal.Identity.AuthenticationType}.\n");
+    }
+    var token = authenticateInfo.Ticket?.Properties.Items[".Token.access_token"];
+    if (token is not null)
+    {
+        await context.Response.WriteAsync(token);
+    }
+}));
 app.MapGraphQL("/");
 
 app.Run();
