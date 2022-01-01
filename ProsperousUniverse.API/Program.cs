@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using HotChocolate.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +22,7 @@ builder.Services
     .Services
     .AddSingleton<SocketWorker>()
     .AddSingleton<CountryRegistry>()
+    .AddSingleton<CacheTracker>()
     .AddSingleton<MaterialCategories>()
     .AddSingleton<IAuthorizationHandler, HasScopeHandler>()
     .AddHostedService(x => x.GetRequiredService<SocketWorker>())
@@ -134,6 +136,17 @@ app.MapGet("/", (async context =>
     if (token is not null)
     {
         await context.Response.WriteAsync(token);
+    }
+}));
+
+app.MapGet("/cache", (async context =>
+{
+    var cache = context.RequestServices.GetRequiredService<CacheTracker>();
+    context.Response.StatusCode = 200;
+    foreach (var entry in cache.Entries)
+    {
+        await context.Response.WriteAsync(entry);
+        await context.Response.WriteAsync("\n");
     }
 }));
 app.MapGraphQL();
