@@ -12,6 +12,13 @@ using ZiggyCreatures.Caching.Fusion;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("Redis")))
+{
+    builder.Services.AddStackExchangeRedisCache(x
+        => x.Configuration = builder.Configuration.GetConnectionString("Redis"));
+}
+
 builder.Services
     .AddHealthChecks()
     .AddCheck<PUConnectionCheck>("PUSocketConnection")
@@ -33,11 +40,12 @@ builder.Services
         {
             FailSafeThrottleDuration = TimeSpan.FromSeconds(10),
             Duration = TimeSpan.FromMinutes(5),
-            JitterMaxDuration = TimeSpan.FromMinutes(3)
+            JitterMaxDuration = TimeSpan.FromMinutes(3),
+            AllowBackgroundDistributedCacheOperations = true,
         };
     })
     .AddSingleton<DataCache>()
-    
+
     .AddGraphQLServer()
     .AddGlobalObjectIdentification()
     .AddQueryType<Query>()
@@ -109,7 +117,9 @@ builder.Services
             NameClaimType = ClaimTypes.NameIdentifier,
         };
         options.SaveToken = true;
-    });
+    })
+    .Services
+    .AddFusionCacheSystemTextJsonSerializer();
 
 var app = builder.Build();
 

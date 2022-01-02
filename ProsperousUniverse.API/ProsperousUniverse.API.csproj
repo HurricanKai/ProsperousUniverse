@@ -12,6 +12,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="6.0.1" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="6.0.1" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
         <PackageReference Include="HotChocolate" Version="$(HotChocolateVersion)" />
         <PackageReference Include="HotChocolate.Subscriptions" Version="$(HotChocolateVersion)" />
@@ -23,6 +24,7 @@
         <PackageReference Include="HotChocolate.Analyzers" Version="$(HotChocolateVersion)" PrivateAssets="all" />
         <PackageReference Include="HotChocolate.PersistedQueries.InMemory" Version="$(HotChocolateVersion)" PrivateAssets="all" />
         <PackageReference Include="ZiggyCreatures.FusionCache" Version="0.1.9" />
+        <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" Version="0.1.9" />
     </ItemGroup>
 
     <ItemGroup>
