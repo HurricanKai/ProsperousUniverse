@@ -5,7 +5,7 @@ using ProsperousUniverse.API.DataLoaders;
 namespace ProsperousUniverse.API.DTOs;
 
 [GraphQLName("Material"), Node]
-[Authorize(Policy = "read:material")]
+[Authorize(Policy = "read:pu_material")]
 public sealed class MaterialDTO : INode
 {
     [GraphQLNonNullType, GraphQLType(typeof(IdType))]
