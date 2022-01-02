@@ -7,24 +7,38 @@ namespace ProsperousUniverse.API;
 public sealed class CacheTracker
 {
     private readonly IFusionCache _cache;
-    private HashSet<string> _entries = new();
+    private HashSet<string> _memEntries = new();
+    private HashSet<string> _distEntries = new();
 
     public CacheTracker(IFusionCache cache)
     {
         _cache = cache;
-        _cache.Events.Set += OnSet;
-        _cache.Events.Remove += OnRemove;
+        _cache.Events.Memory.Set += OnSetMemory;
+        _cache.Events.Memory.Remove += OnRemoveMemory;
+        _cache.Events.Memory.Set += OnSetDist;
+        _cache.Events.Memory.Remove += OnRemoveDist;
     }
 
-    private void OnRemove(object? sender, FusionCacheEntryEventArgs e)
+    private void OnRemoveMemory(object? sender, FusionCacheEntryEventArgs e)
     {
-        _entries.Remove(e.Key);
+        _memEntries.Remove(e.Key);
     }
 
-    private void OnSet(object? sender, FusionCacheEntryEventArgs e)
+    private void OnSetMemory(object? sender, FusionCacheEntryEventArgs e)
     {
-        _entries.Add(e.Key);
+        _memEntries.Add(e.Key);
+    }
+    
+    private void OnRemoveDist(object? sender, FusionCacheEntryEventArgs e)
+    {
+        _distEntries.Remove(e.Key);
     }
 
-    public IEnumerable<string> Entries => _entries;
+    private void OnSetDist(object? sender, FusionCacheEntryEventArgs e)
+    {
+        _distEntries.Add(e.Key);
+    }
+
+    public IEnumerable<string> MemoryEntries => _memEntries;
+    public IEnumerable<string> DistributedEntries => _distEntries;
 }
