@@ -154,14 +154,14 @@ app.MapGet("/cache", (async context =>
 {
     var cache = context.RequestServices.GetRequiredService<CacheTracker>();
     context.Response.StatusCode = 200;
-    await context.Response.WriteAsync("In Memory:");
+    await context.Response.WriteAsync("In Memory:\n");
     foreach (var entry in cache.MemoryEntries)
     {
         await context.Response.WriteAsync(entry);
         await context.Response.WriteAsync("\n");
     }
     
-    await context.Response.WriteAsync("Distributed:");
+    await context.Response.WriteAsync("Distributed:\n");
     foreach (var entry in cache.DistributedEntries)
     {
         await context.Response.WriteAsync(entry);
