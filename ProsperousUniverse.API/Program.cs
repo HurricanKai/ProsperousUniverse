@@ -8,6 +8,7 @@ using ProsperousUniverse.API;
 using ProsperousUniverse.API.DataLoaders;
 using ProsperousUniverse.API.DTOs;
 using ProsperousUniverse.API.Interfaces;
+using StackExchange.Redis;
 using ZiggyCreatures.Caching.Fusion;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("Redis")))
 {
     builder.Services.AddStackExchangeRedisCache(x
-        => x.Configuration = builder.Configuration.GetConnectionString("Redis"));
+        => x.ConfigurationOptions = ConfigurationOptions.Parse(builder.Configuration.GetConnectionString("Redis")));
 }
 
 builder.Services
