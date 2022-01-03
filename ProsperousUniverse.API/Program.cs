@@ -13,14 +13,14 @@ using ZiggyCreatures.Caching.Fusion;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+bool useAuth = builder.Configuration.GetValue<bool>("UseAuth");
 if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("Redis")))
 {
     builder.Services.AddStackExchangeRedisCache(x
         => x.ConfigurationOptions = ConfigurationOptions.Parse(builder.Configuration.GetConnectionString("Redis")));
 }
 
-builder.Services
+var v = builder.Services
     .AddHealthChecks()
     .AddCheck<PUConnectionCheck>("PUSocketConnection")
     .Services
@@ -28,10 +28,10 @@ builder.Services
     .Services
     .AddHttpClient<AuthService>()
     .Services
+    .AddFusionCacheSystemTextJsonSerializer()
     .AddSingleton<SocketWorker>()
     .AddSingleton<CountryRegistry>()
     .AddSingleton<MaterialCategories>()
-    .AddSingleton<IAuthorizationHandler, HasScopeHandler>()
     .AddHostedService(x => x.GetRequiredService<SocketWorker>())
     .AddSingleton<IServerInterface>(x => x.GetRequiredService<SocketWorker>())
     .AddFusionCache(x =>
@@ -39,8 +39,9 @@ builder.Services
         x.DefaultEntryOptions = new FusionCacheEntryOptions()
         {
             FailSafeThrottleDuration = TimeSpan.FromSeconds(10),
-            Duration = TimeSpan.FromMinutes(5),
+            Duration = TimeSpan.FromMinutes(15),
             JitterMaxDuration = TimeSpan.FromMinutes(3),
+            AllowTimedOutFactoryBackgroundCompletion = true,
             AllowBackgroundDistributedCacheOperations = true,
         };
     })
@@ -65,17 +66,18 @@ builder.Services
     .AddType<PlanetDTO>()
     .AddType<SystemDTO>()
     .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = builder.Environment.IsDevelopment())
-    .UseDefaultPipeline()
-    .AddAuthorization()
-    .Services
-    .AddAuthorization(options =>
+    .UseDefaultPipeline();
+
+if (useAuth)
+{
+    v.AddAuthorization().Services.AddAuthorization(options =>
     {
         void AddAuth0(string scope)
         {
             options.AddPolicy(scope,
                 policy => policy.Requirements.Add(new HasScopeRequirement(scope, "https://kaij.eu.auth0.com/")));
         }
-        
+
         AddAuth0("read:pu_building_recipe");
         AddAuth0("read:pu_build_option");
         AddAuth0("read:pu_company");
@@ -102,9 +104,8 @@ builder.Services
         AddAuth0("read:pu_workforce_capacity");
         AddAuth0("read:pu_address");
         AddAuth0("read:pu_present_user");
-        
-    })
-    .AddAuthentication(options =>
+
+    }).AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -117,13 +118,14 @@ builder.Services
             NameClaimType = ClaimTypes.NameIdentifier,
         };
         options.SaveToken = true;
-    })
-    .Services
-    .AddFusionCacheSystemTextJsonSerializer();
+    }).Services
+        .AddSingleton<IAuthorizationHandler, HasScopeHandler>();
+}
 
 var app = builder.Build();
 
-app.UseAuthentication();
+if (useAuth)
+    app.UseAuthentication();
 
 app.UseHealthChecks(new PathString("/health"));
 
@@ -136,16 +138,24 @@ app.MapGet("/", (async context =>
 {
     context.Response.StatusCode = 200;
     await context.Response.WriteAsync("Check /graphql for the API or /health for health information.\n");
-    var authenticateInfo = await context.AuthenticateAsync();
-    if (authenticateInfo.Principal?.Identity is not null)
+    if (useAuth)
     {
-        await context.Response.WriteAsync(
-            $"User logged in as {authenticateInfo.Principal.Identity.Name} via {authenticateInfo.Principal.Identity.AuthenticationType}.\n");
+        var authenticateInfo = await context.AuthenticateAsync();
+        if (authenticateInfo.Principal?.Identity is not null)
+        {
+            await context.Response.WriteAsync(
+                $"User logged in as {authenticateInfo.Principal.Identity.Name} via {authenticateInfo.Principal.Identity.AuthenticationType}.\n");
+        }
+
+        var token = authenticateInfo.Ticket?.Properties.Items[".Token.access_token"];
+        if (token is not null)
+        {
+            await context.Response.WriteAsync(token);
+        }
     }
-    var token = authenticateInfo.Ticket?.Properties.Items[".Token.access_token"];
-    if (token is not null)
+    else
     {
-        await context.Response.WriteAsync(token);
+        await context.Response.WriteAsync("Not using Auth");
     }
 }));
 
