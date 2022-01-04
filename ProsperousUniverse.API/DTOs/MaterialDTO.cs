@@ -42,6 +42,23 @@ public sealed class MaterialDTO : INode
     public BuildingRecipeDTO[] BuildingRecipes { get; set; }
     public MaterialInfrastructureUsageDTO[] InfrastructureUsages { get; set; }
 
+    [GraphQLName("brokerAt"), GraphQLNonNullType]
+    public Task<BrokerDTO> GetBrokerAtAsync(
+        string comexTicker,
+        [Service] BrokerByTickerDataLoader brokerByTickerDataLoader)
+        => brokerByTickerDataLoader.LoadAsync(Ticker + "." + comexTicker);
+
+    [GraphQLName("brokers"), GraphQLNonNullType]
+    public async IAsyncEnumerable<BrokerDTO> GetBrokers([Service] BrokerByTickerDataLoader brokerByTickerDataLoader,
+        [Service] CommodityExchangeList commodityExchangeList)
+    {
+        var list = await commodityExchangeList.GetCommodityExchanges();
+        foreach (var comex in list)
+        {
+            yield return await GetBrokerAtAsync(comex.Code, brokerByTickerDataLoader);
+        }
+    }
+
     public static MaterialDTO Parse(JsonElement jsonElement)
     {
         var matInfo = jsonElement.GetProperty("material");

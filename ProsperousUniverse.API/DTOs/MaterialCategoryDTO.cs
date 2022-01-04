@@ -26,6 +26,23 @@ public sealed class MaterialCategoryDTO : INode
             yield return await materialByIdDataLoader.LoadAsync(id);
     }
 
+    [GraphQLName("brokerCategoryAt"), GraphQLNonNullType]
+    public Task<BrokerCategoryDTO> GetBrokerCategoryAt(
+        string comexId,
+        [Service]
+        BrokerCategoryByMaterialCategoryIdAndComexIdDataLoader brokerCategoryByMaterialCategoryIdAndComexIdDataLoader)
+        => brokerCategoryByMaterialCategoryIdAndComexIdDataLoader.LoadAsync((Id, comexId));
+
+    [GraphQLName("brokerCategories"), GraphQLNonNullType]
+    public async IAsyncEnumerable<BrokerCategoryDTO> GetBrokerCategories([Service] CommodityExchangeList commodityExchangeList,
+        [Service] BrokerCategoryByMaterialCategoryIdAndComexIdDataLoader brokerCategoryByMaterialCategoryIdAndComexIdDataLoader)
+    {
+        foreach (var comex in await commodityExchangeList.GetCommodityExchanges())
+        {
+            yield return await GetBrokerCategoryAt(comex.Id, brokerCategoryByMaterialCategoryIdAndComexIdDataLoader);
+        }
+    }
+
     [NodeResolver]
     public static Task<MaterialCategoryDTO> Get(
         string id,

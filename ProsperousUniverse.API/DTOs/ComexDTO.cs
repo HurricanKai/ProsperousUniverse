@@ -28,6 +28,23 @@ public sealed class ComexDTO : INode
     [GraphQLNonNullType]
     public AddressDTO Address { get; set; }
 
+    [GraphQLName("brokerCategoryOf"), GraphQLNonNullType]
+    public Task<BrokerCategoryDTO> GetBrokerCategoryOf(
+        string materialCategoryId,
+        [Service]
+        BrokerCategoryByMaterialCategoryIdAndComexIdDataLoader brokerCategoryByMaterialCategoryIdAndComexIdDataLoader)
+        => brokerCategoryByMaterialCategoryIdAndComexIdDataLoader.LoadAsync((materialCategoryId, Id));
+
+    [GraphQLName("brokerCategories"), GraphQLNonNullType]
+    public async IAsyncEnumerable<BrokerCategoryDTO> GetBrokerCategories([Service] MaterialCategories materialCategories,
+        [Service] BrokerCategoryByMaterialCategoryIdAndComexIdDataLoader brokerCategoryByMaterialCategoryIdAndComexIdDataLoader)
+    {
+        foreach (var materialCategory in await materialCategories.GetCategories())
+        {
+            yield return await GetBrokerCategoryOf(materialCategory.Id, brokerCategoryByMaterialCategoryIdAndComexIdDataLoader);
+        }
+    }
+
     public static ComexDTO Parse(JsonElement jsonElement)
     {
         var @operator = jsonElement.GetProperty("operator");
