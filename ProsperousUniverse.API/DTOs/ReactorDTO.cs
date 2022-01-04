@@ -24,6 +24,20 @@ public sealed class ReactorDTO : INode
     
     [GraphQLNonNullType]
     public MaterialQuantityDTO[] BuildingCosts { get; set; }
+
+    [GraphQLName("combinedBuildingPrice")]
+    public async Task<double> GetCombinedPrice(
+        string comex,
+        [Service] MaterialByIdDataLoader materialByIdDataLoader,
+        [Service] BrokerByTickerDataLoader brokerByTickerDataLoader
+    )
+    {
+        double d = 0;
+        foreach (var i in BuildingCosts)
+            d += (await (await i.GetMaterialAsync(materialByIdDataLoader)).GetBrokerAtAsync(comex,
+                brokerByTickerDataLoader))?.PriceAverage?.Amount ?? Double.NaN;
+        return d;
+    }
     
     [GraphQLNonNullType]
     public WorkforceCapacityDTO[] WorkforceCapacities {get; set; }
