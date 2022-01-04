@@ -18,6 +18,20 @@ public sealed class BuildingRecipeDTO
     [GraphQLNonNullType]
     public MaterialQuantityDTO[] BuildingCosts { get; set; }
 
+    [GraphQLName("combinedPrice")]
+    public async Task<double> GetCombinedPrice(
+        string comex,
+        [Service] MaterialByIdDataLoader materialByIdDataLoader,
+        [Service] BrokerByTickerDataLoader brokerByTickerDataLoader
+    )
+    {
+        double d = 0;
+        foreach (var i in BuildingCosts)
+            d += (await (await i.GetMaterialAsync(materialByIdDataLoader)).GetBrokerAtAsync(comex,
+                brokerByTickerDataLoader))?.PriceAverage?.Amount ?? Double.NaN;
+        return d;
+    }
+
     public static BuildingRecipeDTO Parse(JsonElement jsonElement)
         => new()
         {

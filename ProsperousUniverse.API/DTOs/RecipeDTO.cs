@@ -22,6 +22,34 @@ public sealed class RecipeDTO
     [GraphQLName("reactor"), GraphQLNonNullType]
     public Task<ReactorDTO> GetReactorAsync([Service] ReactorByIdDataLoader reactorByIdDataLoader)
         => reactorByIdDataLoader.LoadAsync(ReactorId);
+
+    [GraphQLName("combinedInputPrice")]
+    public async Task<double> GetCombinedInputPrice(
+        string comex,
+        [Service] MaterialByIdDataLoader materialByIdDataLoader,
+        [Service] BrokerByTickerDataLoader brokerByTickerDataLoader
+    )
+    {
+        double d = 0;
+        foreach (var i in Inputs)
+            d += (await (await i.GetMaterialAsync(materialByIdDataLoader)).GetBrokerAtAsync(comex,
+                brokerByTickerDataLoader))?.PriceAverage?.Amount ?? Double.NaN;
+        return d;
+    }
+
+    [GraphQLName("combinedOutputPrice")]
+    public async Task<double> GetCombinedOutputPrice(
+        string comex,
+        [Service] MaterialByIdDataLoader materialByIdDataLoader,
+        [Service] BrokerByTickerDataLoader brokerByTickerDataLoader
+    )
+    {
+        double d = 0;
+        foreach (var i in Outputs)
+            d += (await (await i.GetMaterialAsync(materialByIdDataLoader)).GetBrokerAtAsync(comex,
+                brokerByTickerDataLoader))?.PriceAverage?.Amount ?? Double.NaN;
+        return d;
+    }
     
     public static RecipeDTO Parse(JsonElement jsonElement)
     {
