@@ -62,14 +62,14 @@ public sealed class ComexDTO : INode
         };
     }
 
-    [GraphQLName("getBrokerCategory")]
+    [GraphQLName("brokerCategory")]
     public Task<BrokerCategoryDTO> GetBrokerCategoryAsync(
         string materialCategoryId,
         [Service] BrokerCategoryByMaterialCategoryIdAndComexIdDataLoader brokerCategoryByMaterialCategoryIdAndComexIdDataLoader)
         => brokerCategoryByMaterialCategoryIdAndComexIdDataLoader.LoadAsync((materialCategoryId, Id));
     
 
-    [GraphQLName("getAllBrokers")]
+    [GraphQLName("allBrokerCategories")]
     public async IAsyncEnumerable<BrokerCategoryDTO> GetAllBrokersAsync([Service] MaterialCategories materialCategories,
         [Service] BrokerCategoryByMaterialCategoryIdAndComexIdDataLoader brokerCategoryByMaterialCategoryIdAndComexIdDataLoader)
     {

@@ -25,6 +25,7 @@ public sealed class BrokerCategoryDTO
     public string[] BrokerTickers { get; set; }
     
     [GraphQLName("brokers"), GraphQLNonNullType]
+    [UsePaging]
     public async IAsyncEnumerable<BrokerDTO> GetBrokersAsync([Service] BrokerByTickerDataLoader brokerByTickerDataLoader)
     {
         foreach (var ticker in BrokerTickers)

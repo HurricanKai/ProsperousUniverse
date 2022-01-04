@@ -48,7 +48,6 @@ var v = builder.Services
         };
     })
     .AddTransient<DataCache>()
-
     .AddGraphQLServer()
     .AddGlobalObjectIdentification()
     .AddQueryType<Query>()
@@ -71,7 +70,8 @@ var v = builder.Services
     .AddType<PlanetDTO>()
     .AddType<SystemDTO>()
     .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = builder.Environment.IsDevelopment())
-    .UseDefaultPipeline();
+    .UseDefaultPipeline()
+    .AddQueryableCursorPagingProvider();
 
 if (useAuth)
 {

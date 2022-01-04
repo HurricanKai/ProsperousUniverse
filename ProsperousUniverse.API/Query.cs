@@ -21,12 +21,14 @@ public sealed class Query
 
 
     [GraphQLName("countries")]
+    [UsePaging]
     public Task<IEnumerable<CountryDTO>> GetCountries([Service] CountryRegistry countryRegistry)
     {
         return countryRegistry.GetCountries();
     }
 
     [GraphQLName("presentUsers")]
+    [UsePaging]
     public IEnumerable<PresentUser> GetPresentUsers([Service] IServerInterface serverInterface)
     {
         return serverInterface.PresentUsers;
@@ -61,10 +63,12 @@ public sealed class Query
         => populationByIdDataLoader.LoadAsync(id);
 
     [GraphQLName("materialCategories")]
+    [UsePaging]
     public Task<IEnumerable<MaterialCategoryDTO>> GetMaterialCategories([Service] MaterialCategories materialCategories)
         => materialCategories.GetCategories();
 
     [GraphQLName("commodityExchanges")]
+    [UsePaging]
     public Task<IEnumerable<ComexDTO>> GetCommodityExchanges([Service] CommodityExchangeList commodityExchangeList)
         => commodityExchangeList.GetCommodityExchanges();
 
@@ -77,6 +81,7 @@ public sealed class Query
         => brokerByTickerDataLoader.LoadAsync(ticker);
 
     [GraphQLName("brokerCategoryByMaterialCategoryIdAndComexId")]
+    [UsePaging]
     public Task<BrokerCategoryDTO> GetBrokerCategoryByMaterialCategoryIdAndComexId(
         string materialCategoryId,
         string comexId,
