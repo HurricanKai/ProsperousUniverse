@@ -19,11 +19,13 @@ public sealed class CommodityExchangeList
     
     public async Task<IEnumerable<ComexDTO>> GetCommodityExchanges()
     {
-        return await _cache.GetOrSetAsync("PU_COMMODITY_EXCHANGE_LIST", x => _serverInterface.DoAction(
-            x2 => _serverInterface.SendMessage(new BaseMessage(ActionNames.ComexGetExchangeList, new { actionId = x2 }, "comex-registry")), x =>
-            {
-                Debug.Assert(x.MessageType == ActionNames.ComexExchangeList);
-                return x.Payload.GetProperty("exchanges").EnumerateArray().Select(ComexDTO.Parse).ToArray();
-            }));
+        return await _cache.GetOrSetAsync("PU_COMMODITY_EXCHANGE_LIST", async c =>
+        {
+            var x = await _serverInterface.DoAction(
+                    x2 => _serverInterface.SendMessage(new BaseMessage(ActionNames.ComexGetExchangeList,
+                        new { actionId = x2 }, "comex-registry")), c);
+            Debug.Assert(x.MessageType == ActionNames.ComexExchangeList);
+            return x.Payload.GetProperty("exchanges").EnumerateArray().Select(ComexDTO.Parse).ToArray();
+        });
     }
 }

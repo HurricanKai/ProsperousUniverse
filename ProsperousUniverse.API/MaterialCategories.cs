@@ -19,14 +19,16 @@ public sealed class MaterialCategories
 
     public async Task<IEnumerable<MaterialCategoryDTO>> GetCategories()
     {
-        return await _cache.GetOrSetAsync("PU_WORLD_DATA_MATERIAL_CATEGORIES", c 
-            => _serverInterface.DoAction(x => _serverInterface.SendMessage(new BaseMessage(ActionNames.WorldGetMaterialCategories, new { actionId = x}, "world-data")),
-            e =>
-            {
-                Debug.Assert(e!.MessageType == ActionNames.WorldMaterialCategories);
-                return e.Payload.GetProperty("categories").EnumerateArray()
-                    .Select(MaterialCategoryDTO.Parse)
-                    .ToArray();
-            }));
+        return await _cache.GetOrSetAsync("PU_WORLD_DATA_MATERIAL_CATEGORIES", async c 
+            =>
+        {
+            var e = await _serverInterface.DoAction(
+                x => _serverInterface.SendMessage(new BaseMessage(ActionNames.WorldGetMaterialCategories,
+                    new { actionId = x }, "world-data")), c);
+            Debug.Assert(e!.MessageType == ActionNames.WorldMaterialCategories);
+            return e.Payload.GetProperty("categories").EnumerateArray()
+                .Select(MaterialCategoryDTO.Parse)
+                .ToArray();
+        });
     }
 }

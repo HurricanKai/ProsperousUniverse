@@ -1,8 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Polly;
+using Polly.Bulkhead;
 using ProsperousUniverse.API.Interfaces;
 using ProsperousUniverse.API.JsonModels;
 using SocketIOClient;
@@ -11,7 +14,7 @@ using SocketIOClient.Transport;
 namespace ProsperousUniverse.API;
 
 public class SocketWorker
-    : IHostedService, IServerInterface
+    : IHostedService, IServerInterface, IDisposable
 {
     private readonly IServiceProvider _provider;
     private readonly ILogger _logger;
@@ -26,6 +29,11 @@ public class SocketWorker
     public PresentUser[] PresentUsers => _users;
 
     private TaskCompletionSource _postAuthTcs = new();
+    private readonly Meter _meter;
+    private readonly Counter<long> _messageCount;
+    private readonly Counter<long> _eventCount;
+    private readonly SemaphoreSlim _actionSemaphore;
+    private const int MaxConcurrentActions = 10; // We don't want to overload the server :)
 
     public Task WaitForPostAuth()
     {
@@ -41,6 +49,10 @@ public class SocketWorker
         _socketIo = new SocketIO(loggerFactory, "https://apex.prosperousuniverse.com/");
         _socketIo.Options.Transport = TransportProtocol.Polling;
         _socketIo.Options.EIO = 3;
+        _meter = new Meter("PU.API.SocketWorker");
+        _messageCount = _meter.CreateCounter<long>("message-count");
+        _eventCount = _meter.CreateCounter<long>("event-count");
+        _actionSemaphore = new SemaphoreSlim(MaxConcurrentActions, MaxConcurrentActions);
     }
 
     public void SetDataDataHandler(IDataDataHandler dataDataHandler)
@@ -84,6 +96,7 @@ public class SocketWorker
 
     private void HandleEvent(BaseEvent @event)
     {
+        _eventCount.Add(1);
         switch (@event.MessageType)
         {
             case ActionNames.PresenceList:
@@ -150,6 +163,7 @@ public class SocketWorker
 
     public async Task SendMessage(BaseMessage message)
     {
+        _messageCount.Add(1);
         await _socketIo.EmitAsync("message", message);
     }
 
@@ -158,23 +172,53 @@ public class SocketWorker
         await _socketIo.DisconnectAsync();
     }
 
-    public async Task<T> DoAction<T>(Func<string, Task> action, Func<BaseEvent?, T> callback)
-    {
-        var tcs = new TaskCompletionSource<BaseEvent?>();
-        var id = Guid.NewGuid().ToString();
-        _actionCallbacks[id] = tcs;
-        await action(id);
-        return callback(await tcs.Task);
+    private static readonly IAsyncPolicy<BaseEvent?> DoActionPolicy = Policy
+        .Handle<TaskCanceledException>()
+        .Or<OperationCanceledException>()
+        .WaitAndRetryAsync(15, x => TimeSpan.FromSeconds(x))
+        .AsAsyncPolicy<BaseEvent?>();
+
+    public Task<BaseEvent?> DoAction(Func<string, Task> action, CancellationToken cancellationToken, int timeout)
+    {   
+        return DoActionPolicy.ExecuteAsync(async c =>
+        {
+            // this is a super critical point and needs to sustain large peaks of requests at a time, especially after startup
+            var tcs = new TaskCompletionSource<BaseEvent?>();
+            var id = Guid.NewGuid().ToString();
+            _actionCallbacks[id] = tcs;
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(c);
+            await _actionSemaphore.WaitAsync(cts.Token);
+            if (timeout != Timeout.Infinite)
+                cts.CancelAfter(timeout);
+            var v = cts.Token.Register(() => tcs.SetCanceled(), false);
+            try
+            {
+                await action(id);
+                return await tcs.Task;
+            }
+            finally
+            {
+                _actionSemaphore.Release();
+                await v.DisposeAsync(); // merge await using & try-finally into one construct
+                _actionCallbacks.TryRemove(id, out _); // prevent dictionary slowly filling up with timed-out ids
+            }
+        }, cancellationToken);
     }
 
-    public Task<JsonElement> GetData(string[] path, DataFilters? filters)
+    public async Task<JsonElement> GetData(string[] path, DataFilters? filters, CancellationToken cancellationToken, int timeout)
     {
-        return DoAction(
+        var e = await DoAction(
             x => SendMessage(new BaseMessage(ActionNames.DataGetData, new { actionId = x, path = path, filters = filters })),
-            e =>
-            {
-                Debug.Assert(e.MessageType == ActionNames.DataData);
-                return e.Payload;
-            });
+            cancellationToken, timeout);
+        Debug.Assert(e.MessageType == ActionNames.DataData);
+        return e.Payload;
+    }
+
+    public void Dispose()
+    {
+        _actionSemaphore.Dispose();
+        _socketIo.Dispose();
+        _handler?.Dispose();
+        _meter.Dispose();
     }
 }

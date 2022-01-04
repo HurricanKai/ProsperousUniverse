@@ -20,15 +20,15 @@ public sealed class CountryRegistry
     
     public async Task<IEnumerable<CountryDTO>> GetCountries()
     {
-        return await _cache.GetOrSetAsync("PU_COUNTRY_REGISTRY", entry
-            => _serverInterface.DoAction(
-                x => _serverInterface.SendMessage(new BaseMessage(ActionNames.CountryRegistryGetCountries,
-                    new { actionId = x }, "country-registry")), e =>
-                {
-                    var (messageType, jsonElement) = e;
-                    Debug.Assert(messageType == ActionNames.CountryRegistryCountries);
-                    return jsonElement.GetProperty("countries").EnumerateArray().Select(CountryDTO.Parse).ToArray();
-                }));
+        return await _cache.GetOrSetAsync("PU_COUNTRY_REGISTRY", async entry
+            =>
+        {
+            var e = await _serverInterface.DoAction(
+                c => _serverInterface.SendMessage(new BaseMessage(ActionNames.CountryRegistryGetCountries,
+                    new { actionId = c }, "country-registry")), entry);
+            Debug.Assert(e.MessageType == ActionNames.CountryRegistryCountries);
+            return e.Payload.GetProperty("countries").EnumerateArray().Select(CountryDTO.Parse).ToArray();
+        });
     }
 
     private string ThrowRequiredPropertyMissing(string name)

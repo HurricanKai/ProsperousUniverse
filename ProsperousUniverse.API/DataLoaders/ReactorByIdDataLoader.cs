@@ -19,11 +19,12 @@ public sealed class ReactorByIdDataLoader : CacheDataLoader<string, ReactorDTO>
     }
     
     protected override async Task<ReactorDTO> LoadSingleAsync(string key, CancellationToken cancellationToken)
-        => await _cache.GetOrSetAsync("PU_REACTOR" + key, c => _serverInterface.DoAction(
-        x => _serverInterface.SendMessage(new BaseMessage(ActionNames.WorldFindReactorData, new { actionId = x, query = key },
-            "world-data")), x =>
+        => await _cache.GetOrSetAsync("PU_REACTOR" + key, async c =>
         {
-            Debug.Assert(x!.MessageType == ActionNames.WorldReactorData);
+            var x = await _serverInterface.DoAction(
+                    x => _serverInterface.SendMessage(new BaseMessage(ActionNames.WorldFindReactorData,
+                        new { actionId = x, query = key }, "world-data")), c);
+            Debug.Assert(x.MessageType == ActionNames.WorldReactorData);
             return ReactorDTO.Parse(x.Payload);
-        }), token: cancellationToken);
+        }, token: cancellationToken);
 }

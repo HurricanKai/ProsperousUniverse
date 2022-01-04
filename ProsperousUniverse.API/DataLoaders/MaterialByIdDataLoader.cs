@@ -18,11 +18,12 @@ public sealed class MaterialByIdDataLoader : CacheDataLoader<string, MaterialDTO
     }
 
     protected override async Task<MaterialDTO> LoadSingleAsync(string key, CancellationToken cancellationToken)
-        => await _cache.GetOrSetAsync("PU_MATERIAL_ID" + key, c  => _serverInterface.DoAction(
-            x => _serverInterface.SendMessage(new BaseMessage(ActionNames.WorldFindMaterialData,
-                new { query = key, actionId = x }, "world-data")), m =>
-            {
-                Debug.Assert(m.MessageType == ActionNames.WorldMaterialData);
-                return MaterialDTO.Parse(m.Payload);
-            }), token: cancellationToken);
+        => await _cache.GetOrSetAsync("PU_MATERIAL_ID" + key, async c  =>
+        {
+            var e = await _serverInterface.DoAction(
+                    x => _serverInterface.SendMessage(new BaseMessage(ActionNames.WorldFindMaterialData,
+                        new { query = key, actionId = x }, "world-data")), c);
+            Debug.Assert(e.MessageType == ActionNames.WorldMaterialData);
+            return MaterialDTO.Parse(e.Payload);
+        }, token: cancellationToken);
 }

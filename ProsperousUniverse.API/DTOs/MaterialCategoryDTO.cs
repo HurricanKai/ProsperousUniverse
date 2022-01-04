@@ -19,7 +19,6 @@ public sealed class MaterialCategoryDTO : INode
     public string[] MaterialIds { get; set; }
 
     [GraphQLNonNullType, GraphQLName("materials")]
-    // [UsePaging]
     public async IAsyncEnumerable<MaterialDTO> GetMaterialsAsync(
         [Service] MaterialByIdDataLoader materialByIdDataLoader)
     {

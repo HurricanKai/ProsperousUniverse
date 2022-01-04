@@ -20,12 +20,12 @@ public sealed class BrokerCategoryByMaterialCategoryIdAndComexIdDataLoader : Cac
     protected override async Task<BrokerCategoryDTO>
         LoadSingleAsync((string MaterialCategoryId, string ComexId) key, CancellationToken cancellationToken)
         => await _fusionCache.GetOrSetAsync("PU_BROKER_CATEGORY" + key.MaterialCategoryId + key.ComexId,
-            c => _serverInterface.DoAction(
-                x => _serverInterface.SendMessage(new BaseMessage(ActionNames.ComexExchangeGetBrokerList,
-                    new { actionId = x, categoryId = key.MaterialCategoryId }, key.ComexId)), 
-                e =>
-                {
-                    Debug.Assert(e.MessageType == ActionNames.ComexExchangeBrokerList);
-                    return BrokerCategoryDTO.Parse(e.Payload);
-                }), token: cancellationToken);
+            async c =>
+            {
+                var e = await _serverInterface.DoAction(
+                    x => _serverInterface.SendMessage(new BaseMessage(ActionNames.ComexExchangeGetBrokerList,
+                        new { actionId = x, categoryId = key.MaterialCategoryId }, key.ComexId)), c);
+                Debug.Assert(e.MessageType == ActionNames.ComexExchangeBrokerList);
+                return BrokerCategoryDTO.Parse(e.Payload);
+            }, token: cancellationToken);
 }

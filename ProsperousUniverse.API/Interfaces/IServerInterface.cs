@@ -9,7 +9,8 @@ public interface IServerInterface
     PresentUser[] PresentUsers { get; }
     Task WaitForPostAuth();
     Task SendMessage(BaseMessage message);
-    Task<T> DoAction<T>(Func<string, Task> action, Func<BaseEvent?, T> callback);
-    Task<JsonElement> GetData(string[] path, DataFilters? filters = null);
+    private const int DefaultTimeout = 5000;
+    Task<BaseEvent?> DoAction(Func<string, Task> action, CancellationToken cancellationToken = default, int timeout = DefaultTimeout);
+    Task<JsonElement> GetData(string[] path, DataFilters? filters = null, CancellationToken cancellationToken = default, int timeout = DefaultTimeout);
     void SetDataDataHandler(IDataDataHandler handler);
 }

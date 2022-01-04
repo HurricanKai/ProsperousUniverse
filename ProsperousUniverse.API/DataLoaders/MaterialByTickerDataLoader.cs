@@ -18,11 +18,12 @@ public sealed class MaterialByTickerDataLoader : CacheDataLoader<string, Materia
     }
 
     protected override async Task<MaterialDTO> LoadSingleAsync(string key, CancellationToken cancellationToken)
-        => await _cache.GetOrSetAsync("PU_MAT_TIK" + key, c => _serverInterface.DoAction(
-            x => _serverInterface.SendMessage(new BaseMessage(ActionNames.WorldFindMaterialData,
-                new { query = key, actionId = x }, "world-data")), m =>
-            {
-                Debug.Assert(m.MessageType == ActionNames.WorldMaterialData);
-                return MaterialDTO.Parse(m.Payload);
-            }), token: cancellationToken);
+        => await _cache.GetOrSetAsync("PU_MAT_TIK" + key, async c =>
+        {
+            var m = await _serverInterface.DoAction(
+                    x => _serverInterface.SendMessage(new BaseMessage(ActionNames.WorldFindMaterialData,
+                        new { query = key, actionId = x }, "world-data")), c);
+            Debug.Assert(m.MessageType == ActionNames.WorldMaterialData);
+            return MaterialDTO.Parse(m.Payload);
+        }, token: cancellationToken);
 }

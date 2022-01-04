@@ -17,12 +17,13 @@ public sealed class BrokerByTickerDataLoader : CacheDataLoader<string, BrokerDTO
         _cache = cache;
     }
 
-    protected override async Task<BrokerDTO> LoadSingleAsync(string key, CancellationToken cancellationToken)
-        => await _cache.GetOrSetAsync("PU_BROKER" + key, c => _serverInterface.DoAction(
+    protected override async Task<BrokerDTO> LoadSingleAsync(string key, CancellationToken cancellationToken) 
+        => await _cache.GetOrSetAsync("PU_BROKER" + key, async c =>
+    {
+        var x = await _serverInterface.DoAction(
             x => _serverInterface.SendMessage(new BaseMessage(ActionNames.ComexGetBrokerData,
-                new { actionId = x, ticker = key }, "comex-registry")), x =>
-            {
-                Debug.Assert(x.MessageType == ActionNames.ComexBrokerData);
-                return BrokerDTO.Parse(x.Payload);
-            }), token: cancellationToken);
+                new { actionId = x, ticker = key }, "comex-registry")), c);
+        Debug.Assert(x.MessageType == ActionNames.ComexBrokerData);
+        return BrokerDTO.Parse(x.Payload);
+    }, token: cancellationToken);
 }
