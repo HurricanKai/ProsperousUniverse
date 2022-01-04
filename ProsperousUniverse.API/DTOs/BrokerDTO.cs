@@ -141,13 +141,20 @@ public sealed class BrokerOrderDTO
     [GraphQLNonNullType]
     public CurrencyAmountDTO Limit { get; set; }
 
-    public static BrokerOrderDTO Parse(JsonElement jsonElement) => new()
+    public static BrokerOrderDTO Parse(JsonElement jsonElement)
     {
-        Id = jsonElement.GetProperty("id").GetString() ?? ParsingUtils.ThrowRequiredPropertyMissing("id"),
-        TraderId = jsonElement.GetProperty("trader").GetProperty("id").GetString() ?? ParsingUtils.ThrowRequiredPropertyMissing("trader.id"),
-        Amount = jsonElement.GetProperty("amount").GetInt32(),
-        Limit = CurrencyAmountDTO.Parse(jsonElement.GetProperty("limit"))
-    };
+        var amount = jsonElement.GetProperty("amount");
+        var a = amount.ValueKind == JsonValueKind.Null ? 0 : amount.GetInt32();
+        return new()
+        {
+            Id = jsonElement.GetProperty("id").GetString() ?? ParsingUtils.ThrowRequiredPropertyMissing("id"),
+            TraderId =
+                jsonElement.GetProperty("trader").GetProperty("id").GetString() ??
+                ParsingUtils.ThrowRequiredPropertyMissing("trader.id"),
+            Amount = a,
+            Limit = CurrencyAmountDTO.Parse(jsonElement.GetProperty("limit"))
+        };
+    }
 }
 
 public sealed class PriceBandDTO
