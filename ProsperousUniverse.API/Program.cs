@@ -33,6 +33,7 @@ var v = builder.Services
     .AddTransient<CountryRegistry>()
     .AddTransient<MaterialCategories>()
     .AddTransient<WorldEntityResolver>()
+    .AddTransient<CommodityExchangeList>()
     .AddHostedService(x => x.GetRequiredService<SocketWorker>())
     .AddSingleton<IServerInterface>(x => x.GetRequiredService<SocketWorker>())
     .AddFusionCache(x =>

@@ -25,7 +25,7 @@ public sealed class AddressDTO
         {
             Lines = jsonElement.GetProperty("lines").EnumerateArray().Select(x => (
                 x.GetProperty("type").GetString() ?? ParsingUtils.ThrowRequiredPropertyMissing("type"),
-                x.GetProperty("id").GetString() ?? ParsingUtils.ThrowRequiredPropertyMissing("id"))).ToArray()
+                x.GetProperty("entity").GetProperty("id").GetString() ?? ParsingUtils.ThrowRequiredPropertyMissing("entity.id"))).ToArray()
         };
     }
 }
