@@ -30,8 +30,9 @@ var v = builder.Services
     .Services
     .AddFusionCacheSystemTextJsonSerializer()
     .AddSingleton<SocketWorker>()
-    .AddSingleton<CountryRegistry>()
-    .AddSingleton<MaterialCategories>()
+    .AddTransient<CountryRegistry>()
+    .AddTransient<MaterialCategories>()
+    .AddTransient<WorldEntityResolver>()
     .AddHostedService(x => x.GetRequiredService<SocketWorker>())
     .AddSingleton<IServerInterface>(x => x.GetRequiredService<SocketWorker>())
     .AddFusionCache(x =>
@@ -45,7 +46,7 @@ var v = builder.Services
             AllowBackgroundDistributedCacheOperations = true,
         };
     })
-    .AddSingleton<DataCache>()
+    .AddTransient<DataCache>()
 
     .AddGraphQLServer()
     .AddGlobalObjectIdentification()
@@ -62,6 +63,9 @@ var v = builder.Services
     .AddDataLoader<MaterialCategoryByIdDataLoader>()
     .AddDataLoader<ReactorByIdDataLoader>()
     .AddDataLoader<PopulationByIdDataLoader>()
+    .AddDataLoader<ComexByIdDataLoader>()
+    .AddDataLoader<BrokerByTickerDataLoader>()
+    .AddDataLoader<BrokerCategoryByMaterialCategoryIdAndComexIdDataLoader>()
     .AddInterfaceType<IWorldEntityDTO>()
     .AddType<PlanetDTO>()
     .AddType<SystemDTO>()

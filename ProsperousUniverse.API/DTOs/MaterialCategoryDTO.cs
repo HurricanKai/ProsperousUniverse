@@ -19,13 +19,11 @@ public sealed class MaterialCategoryDTO : INode
     public string[] MaterialIds { get; set; }
 
     [GraphQLNonNullType, GraphQLName("materials")]
-    public async Task<List<MaterialDTO>> GetMaterialsAsync(
+    public async IAsyncEnumerable<MaterialDTO> GetMaterialsAsync(
         [Service] MaterialByIdDataLoader materialByIdDataLoader)
     {
-        var list = new List<MaterialDTO>(MaterialIds.Length);
-        foreach(var id in MaterialIds)
-            list.Add(await materialByIdDataLoader.LoadAsync(id));
-        return list;
+        foreach (var id in MaterialIds)
+            yield return await materialByIdDataLoader.LoadAsync(id);
     }
 
     [NodeResolver]

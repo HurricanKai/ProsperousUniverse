@@ -64,4 +64,24 @@ public sealed class Query
     public Task<IEnumerable<MaterialCategoryDTO>> GetMaterialCategories([Service] MaterialCategories materialCategories)
         => materialCategories.GetCategories();
 
+    [GraphQLName("commodityExchanges")]
+    public Task<IEnumerable<ComexDTO>> GetCommodityExchanges([Service] CommodityExchangeList commodityExchangeList)
+        => commodityExchangeList.GetCommodityExchanges();
+
+    [GraphQLName("comexById")]
+    public Task<ComexDTO> GetComexById(string id, [Service] ComexByIdDataLoader comexByIdDataLoader)
+        => comexByIdDataLoader.LoadAsync(id);
+
+    [GraphQLName("brokerByTicker")]
+    public Task<BrokerDTO> GetBrokerByTicker(string ticker, [Service] BrokerByTickerDataLoader brokerByTickerDataLoader)
+        => brokerByTickerDataLoader.LoadAsync(ticker);
+
+    [GraphQLName("brokerCategoryByMaterialCategoryIdAndComexId")]
+    public Task<BrokerCategoryDTO> GetBrokerCategoryByMaterialCategoryIdAndComexId(
+        string materialCategoryId,
+        string comexId,
+        [Service]
+        BrokerCategoryByMaterialCategoryIdAndComexIdDataLoader brokerCategoryByMaterialCategoryIdAndComexIdDataLoader)
+        => brokerCategoryByMaterialCategoryIdAndComexIdDataLoader.LoadAsync((materialCategoryId, comexId));
+
 }

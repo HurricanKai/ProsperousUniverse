@@ -44,12 +44,10 @@ public class SystemDTO : IWorldEntityDTO, INode
     public string[] PlanetIds { get; set; }
 
     [GraphQLName("planets")]
-    public async Task<List<PlanetDTO>> GetPlanetsAsync([Service] PlanetByIdDataLoader planetByIdDataLoader)
+    public async IAsyncEnumerable<PlanetDTO> GetPlanetsAsync([Service] PlanetByIdDataLoader planetByIdDataLoader)
     {
-        var list = new List<PlanetDTO>(PlanetIds.Length);
         foreach (var id in PlanetIds)
-            list.Add(await planetByIdDataLoader.LoadAsync(id));
-        return list;
+            yield return await planetByIdDataLoader.LoadAsync(id);
     }
 
     // TODO: Celestial bodies
@@ -58,12 +56,10 @@ public class SystemDTO : IWorldEntityDTO, INode
     public string[] ConnectionIds { get; set; }
 
     [GraphQLName("connections")]
-    public async Task<List<SystemDTO>> GetConnectionsAsync([Service] SystemByIdDataLoader systemByIdDataLoader)
+    public async IAsyncEnumerable<SystemDTO> GetConnectionsAsync([Service] SystemByIdDataLoader systemByIdDataLoader)
     {
-        var list = new List<SystemDTO>(ConnectionIds.Length);
         foreach(var id in ConnectionIds)
-            list.Add(await systemByIdDataLoader.LoadAsync(id));
-        return list;
+            yield return await systemByIdDataLoader.LoadAsync(id);
     }
 
     public static SystemDTO Parse(JsonElement jsonElement)
