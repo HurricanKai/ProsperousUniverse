@@ -81,7 +81,6 @@ public sealed class Query
         => brokerByTickerDataLoader.LoadAsync(ticker);
 
     [GraphQLName("brokerCategoryByMaterialCategoryIdAndComexId")]
-    [UsePaging]
     public Task<BrokerCategoryDTO> GetBrokerCategoryByMaterialCategoryIdAndComexId(
         string materialCategoryId,
         string comexId,
